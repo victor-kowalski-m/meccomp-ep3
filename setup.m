@@ -2,7 +2,7 @@ clear
 clc
 close all
 
-dx = 3; % discretização escolhida
+dx = 1; % discretização escolhida
 
 %%% Pontos do desenho
 pontos.A.coor = [0  0 ]; pontos.A.nod = 1; % A
@@ -61,8 +61,8 @@ data.E = 210e9*ones(Nel, 1);
 data.rho = 7600*ones(Nel, 1);
 
 data.A = zeros(Nel, 1);
-data.A(vigaHor) = 1.8*0.9; 
-data.A(vigaVer) = 0.9*0.9;
+data.A(vigaHor) = 0.9*0.9; 
+data.A(vigaVer) = 1.8*0.9;
 data.A(trelicas) = pi*0.05^2/4;
 
 data.L = zeros(Nel, 1);
@@ -194,4 +194,5 @@ Mgm(:, phiG) = 0; Mgm(phiG, :) = 0; Mgm(phiG, phiG) = 1;
 
 A = Mgm\Kgm;
 [vec, val] = eig(A);
+val = sqrt(diag(val))/(2*pi);
 
