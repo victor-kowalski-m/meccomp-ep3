@@ -49,8 +49,6 @@ for p = ['B', 'D', 'H']
 end
 trelicas = (vigaVer(end)+1):size(con, 1);
 
-plot_struct(coor, con)
-
 %%% Quantidades de nós, elementos e G.L.
 Nod = size(coor, 1);
 Nel = size(con, 1);
@@ -61,9 +59,14 @@ data.E = 210e9*ones(Nel, 1);
 data.rho = 7600*ones(Nel, 1);
 
 data.A = zeros(Nel, 1);
-data.A(vigaHor) = 0.9*0.9; 
+data.A(vigaHor) = 0.9*0.9;
 data.A(vigaVer) = 1.8*0.9;
 data.A(trelicas) = pi*0.05^2/4;
+
+data.I = zeros(Nel, 1);
+data.I(vigaHor) = 0.9*0.9^3/12;
+data.I(vigaVer) = 1.8^3*0.9/12;
+data.I(trelicas) = pi*0.05^4/32;
 
 data.L = zeros(Nel, 1);
 data.Q = zeros(Nel, 1);
@@ -78,13 +81,18 @@ for e = 1:Nel
     
     data.L(e) = sqrt((x2-x1)^2 + (y2-y1)^2);
     data.Q(e) = atan2(y2-y1, x2-x1)*180/pi;
-    data.I(e) = data.rho(e)*data.A(e)*data.L(e)^3/12;
     
+    if ismember(e, trelicas)
+        data.viga(e) = 0;
+    else
+        data.viga(e) = 1;
+    end
+        
 end
 
 
 %%% Funções para cálculo das matrizes de rigidez, massa e transformação
-Ke = @(E, A, I, L)...
+Ke = @(E, A, I, L, viga)...
     [ ...
      1  0  0 -1  0  0;
      0  0  0  0  0  0;
@@ -100,9 +108,9 @@ Ke = @(E, A, I, L)...
      0      0      0      0     0     0     ;
      0     -12    -6*L    0     12   -6*L   ;
      0      6*L    2*L^2  0    -6*L   4*L^2 ;
-    ] * E*I/(L^3) ;
+    ] * E*I/(L^3) * viga;
 
-Me = @(rho, A, L)...
+Me = @(rho, A, L, viga)...
     [ ...
      2  0  0  1  0  0;
      0  0  0  0  0  0;
@@ -118,7 +126,7 @@ Me = @(rho, A, L)...
      0       0       0       0      0      0     ;
      0       54      13*L    0      156   -22*L   ;
      0      -13*L   -3*L^2   0     -22*L   4*L^2 ;
-    ] * rho*A*L/420 ;
+    ] * rho*A*L/420 * viga;
 
 Te = @(theta)...
     [
@@ -135,8 +143,8 @@ Mg = zeros(Ngdl);
 
 for e = 1:Nel
     
-    ke = Ke(data.E(e), data.A(e), data.I(e), data.L(e));
-    me = Me(data.rho(e), data.A(e), data.L(e));
+    ke = Ke(data.E(e), data.A(e), data.I(e), data.L(e), data.viga(e));
+    me = Me(data.rho(e), data.A(e), data.L(e), data.viga(e));
     
     T = Te(data.Q(e));
     ke = T'*ke*T;
@@ -165,34 +173,66 @@ for e = 1:Nel
         
 end
 
-Kgm = Kg;
-Mgm = Mg;
+list = 1:Ngdl;
+id_fix = [3*pontos.H.nod-2 3*pontos.H.nod-1 3*pontos.G.nod-2:3*pontos.G.nod];
+id_free = list(ismember(list, id_fix) == 0);
 
+Kgm = Kg(id_free, id_free);
+Mgm = Mg(id_free, id_free);
+
+A = Mgm\Kgm;
+[vec, val] = eigs(A, 6, 'SM');
+val = sqrt(diag(val))/(2*pi);
+
+mod = 6;
+
+freq = val(mod);
+T = 1/freq;
+dt = T/15;
+TF = 5*T;
+t = 0:dt:TF;
+
+U = zeros(Ngdl, 1);
+U(id_free) = vec(:, mod);
+scale = 10;
+
+for i=1:length(t)
+    coorExag = coor + scale*[U(1:3:end) U(2:3:end)]*sin(2*pi*freq*t(i));
+    plot_struct(coorExag, con, '-r');
+    axis([-10 80 -10 25])
+    plot_struct(coor, con, '-b');
+    pause(0.001);
+    clf;
+end
+
+% Kgm = Kg;
+% Mgm = Mg;
+% 
 % uE = 3*pontos.E.nod-2;
 % wE = 3*pontos.E.nod-1;
 % Kgm(:, uE) = 0; Kgm(uE, :) = 0; Kgm(uE, uE) = 1;
 % Kgm(:, wE) = 0; Kgm(wE, :) = 0; Kgm(wE, wE) = 1;
 % Mgm(:, uE) = 0; Mgm(uE, :) = 0; Mgm(uE, uE) = 1;
 % Mgm(:, wE) = 0; Mgm(wE, :) = 0; Mgm(wE, wE) = 1; 
-
-uH = 3*pontos.H.nod-2;
-wH = 3*pontos.H.nod-1;
-Kgm(:, uH) = 0; Kgm(uH, :) = 0; Kgm(uH, uH) = 1;
-Kgm(:, wH) = 0; Kgm(wH, :) = 0; Kgm(wH, wH) = 1;
-Mgm(:, uH) = 0; Mgm(uH, :) = 0; Mgm(uH, uH) = 1;
-Mgm(:, wH) = 0; Mgm(wH, :) = 0; Mgm(wH, wH) = 1;
-
-uG = 3*pontos.G.nod-2;
-wG = 3*pontos.G.nod-1;
-phiG = 3*pontos.G.nod;
-Kgm(:, uG) = 0; Kgm(uG, :) = 0; Kgm(uG, uG) = 1;
-Kgm(:, wG) = 0; Kgm(wG, :) = 0; Kgm(wG, wG) = 1;
-Kgm(:, phiG) = 0; Kgm(phiG, :) = 0; Kgm(phiG, phiG) = 1;
-Mgm(:, uG) = 0; Mgm(uG, :) = 0; Mgm(uG, uG) = 1;
-Mgm(:, wG) = 0; Mgm(wG, :) = 0; Mgm(wG, wG) = 1;
-Mgm(:, phiG) = 0; Mgm(phiG, :) = 0; Mgm(phiG, phiG) = 1; 
-
-A = Mgm\Kgm;
-[vec, val] = eig(A);
-val = sqrt(diag(val))/(2*pi);
+% 
+% uH = 3*pontos.H.nod-2;
+% wH = 3*pontos.H.nod-1;
+% Kgm(:, uH) = 0; Kgm(uH, :) = 0; Kgm(uH, uH) = 1;
+% Kgm(:, wH) = 0; Kgm(wH, :) = 0; Kgm(wH, wH) = 1;
+% Mgm(:, uH) = 0; Mgm(uH, :) = 0; Mgm(uH, uH) = 1;
+% Mgm(:, wH) = 0; Mgm(wH, :) = 0; Mgm(wH, wH) = 1;
+% 
+% uG = 3*pontos.G.nod-2;
+% wG = 3*pontos.G.nod-1;
+% phiG = 3*pontos.G.nod;
+% Kgm(:, uG) = 0; Kgm(uG, :) = 0; Kgm(uG, uG) = 1;
+% Kgm(:, wG) = 0; Kgm(wG, :) = 0; Kgm(wG, wG) = 1;
+% Kgm(:, phiG) = 0; Kgm(phiG, :) = 0; Kgm(phiG, phiG) = 1;
+% Mgm(:, uG) = 0; Mgm(uG, :) = 0; Mgm(uG, uG) = 1;
+% Mgm(:, wG) = 0; Mgm(wG, :) = 0; Mgm(wG, wG) = 1;
+% Mgm(:, phiG) = 0; Mgm(phiG, :) = 0; Mgm(phiG, phiG) = 1; 
+% 
+% A = Mgm\Kgm;
+% [vec, val] = eig(A);
+% val = sqrt(diag(val))/(2*pi);
 
