@@ -175,7 +175,8 @@ for e = 1:Nel
     Mg(3*nod2-2:3*nod2, 3*nod2-2:3*nod2) = ...
         Mg(3*nod2-2:3*nod2, 3*nod2-2:3*nod2) + me(4:6, 4:6);
    
-    if nod2 <= pontos.C.nod ||((nod1 >= pontos.E.nod) && (nod2 <= pontos.H.nod))
+    if nod2 <= pontos.C.nod ||( ...
+            (nod1 >= pontos.E.nod) && (nod2 <= pontos.H.nod))
         
         fe  = Fe(-80*9.8/9, data.L(e));
         Fg(3*nod1-2:3*nod1) = Fg(3*nod1-2:3*nod1) + fe(1:3);
@@ -188,49 +189,50 @@ end
 list = 1:Ngdl;
 id_fix = [3*pontos.I.nod-2 3*pontos.I.nod-1 3*pontos.G.nod-2:3*pontos.G.nod];
 id_free = list(ismember(list, id_fix) == 0);
+Ngdla = length(id_free);
 
 Kgm = Kg(id_free, id_free);
 Mgm = Mg(id_free, id_free);
 Fgm = Fg(id_free);
 
-aux_eig = Mgm\Kgm;
-[vec, val] = eigs(aux_eig, 6, 'SM');
-val = sqrt(diag(val))/(2*pi);
-
 a0 = 0.1217;
 a1 = 0.0087;
 Cgm = a0*Mgm + a1*Kgm;
-
 gamma = 0.5;
 beta = 0.25;
 
-va = 1;
-dt = 0.1;
-TF = 2*55/va;
+U_plot = zeros(Ngdl, 1);
+scale = 500;
+
+vas = [0.5 1 2];
+dts{1} = 0.01;
+dts{2} = [0.1 0.01 0.005];
+dts{3} = 0.01;
+
+for j=1:length(vas)%va=[0.5 1 2]
+for dt=dts{j}
+    
+va = vas(j);
+TF = 55/va;
 t = 0:dt:TF;
-Ngdla = length(id_free);
 
 Meq = Mgm + dt*gamma*Cgm + dt^2*beta*Kgm;
 
-% U1 = zeros(Ngdla, 1);
+U1 = Kgm\(20*Fgm);
 V1 = zeros(Ngdla, 1);
 A1 = zeros(Ngdla, 1);
-
-U1 = Kgm\(20*Fgm);
-
-scale = 500;
-
-U_plot = zeros(Ngdl, 1);
-% U_EP = zeros(length(t), 1);
-
 V = zeros(Ngdl, 1);
 
 deslocA = zeros(length(t), 1);
+deslocB = zeros(length(t), 1);
+deslocC = zeros(length(t), 1);
+deslocF = zeros(length(t), 1);
 
 for i = 1:length(t)
         
     F2 = Fg;
 
+    % Define N1
     if t(i) > 27/va
         if t(i) <= 47/va
             N1 = va*t(i)-7;
@@ -242,6 +244,7 @@ for i = 1:length(t)
     end
     F2(1:3*pontos.C.nod) = F2(1:3*pontos.C.nod)*N1;
     
+    % Define N2
     if t(i) <= 20/va
         N2 = 20-va*t(i);
     else
@@ -249,6 +252,7 @@ for i = 1:length(t)
     end
     F2(3*pontos.E.nod-2:3*pontos.H.nod) = F2(3*pontos.E.nod-2:3*pontos.H.nod)*N2;
     
+    % Define Vi
     for e=(pontos.C.nod+1):(pontos.E.nod-1)
         if t(i) > (pontos.E.coor(1)-coor(e, 1))/va
             if t(i) < (pontos.E.coor(1)+20-coor(e, 1))/va
@@ -262,16 +266,8 @@ for i = 1:length(t)
     end
     F2 = F2 + V;
     
-    F3 = F2;
+%     F3 = F2;
     F2 = F2(id_free);
-    
-%     if t(i) < TF/2
-%         F2 = Fgm;
-%     else
-%         F2 = Fgm*0;
-%     end
-    
-%     disp(t(i))
     
     Feq = F2 - Cgm*(V1 + dt*(1-gamma)*A1) - Kgm*(U1 + dt*V1 + dt^2/2*(1-2*beta)*A1);
     A2 = Meq\Feq;
@@ -279,9 +275,12 @@ for i = 1:length(t)
     V2 = V1 + dt*((1-gamma)*A1 + gamma*A2);
     
     U_plot(id_free) = U2;
+    deslocA(i) = U_plot(3*pontos.A.nod-1);
+    deslocB(i) = U_plot(3*pontos.B.nod-1);
+    deslocC(i) = U_plot(3*pontos.C.nod-1);
+    deslocF(i) = U_plot(3*pontos.F.nod-2);
     
-%     if mod(i, 5)
-% %     U_EP = U_plot(x);
+%     if mod(i, 20)
 %     
 %     coorExag = coor + scale*[U_plot(1:3:end) U_plot(2:3:end)];
 % %     figure(1);
@@ -299,65 +298,27 @@ for i = 1:length(t)
     U1 = U2;
     V1 = V2;
     A1 = A2;
-    
-    deslocA(i) = U_plot(2);
-    
+       
 end
 
+if va == 1
+    subplot(2, 2, 1);
+    plot(t, deslocA)
+    hold on
+    legend(string(dts{j})+"s")
+    title('\bf{Ponto A} ({\boldmath$v_a='+string(va)+'$})','Interpreter','latex')
+end
+
+end
+
+subplot(2, 2, j+1);
+hold on
 plot(t, deslocA)
-% A = Mgm\Kgm;
-% [vec, val] = eigs(A, 6, 'SM');
-% val = sqrt(diag(val))/(2*pi);
-% 
-% mod = 6;
-% 
-% freq = val(mod);
-% T = 1/freq;
-% dt = T/15;
-% TF = 5*T;
-% t = 0:dt:TF;
-% 
-% U = zeros(Ngdl, 1);
-% U(id_free) = vec(:, mod);
-% scale = 10;
-% 
-% for i=1:length(t)
-%     coorExag = coor + scale*[U(1:3:end) U(2:3:end)]*sin(2*pi*freq*t(i));
-%     plot_struct(coorExag, con, '-r');
-%     axis([-10 80 -10 25])
-%     plot_struct(coor, con, '-b');
-%     pause(0.001);
-%     clf;
-% end
+plot(t, deslocB)
+plot(t, deslocC)
+plot(t, deslocF)
+hold off
+legend(["A" "B" "C" "F"])
+title('\bf{Pontos ABCF} ({\boldmath$v_a='+string(va)+'$})','Interpreter','latex')
 
-% Kgm = Kg;
-% Mgm = Mg;
-% 
-% uE = 3*pontos.E.nod-2;
-% wE = 3*pontos.E.nod-1;
-% Kgm(:, uE) = 0; Kgm(uE, :) = 0; Kgm(uE, uE) = 1;
-% Kgm(:, wE) = 0; Kgm(wE, :) = 0; Kgm(wE, wE) = 1;
-% Mgm(:, uE) = 0; Mgm(uE, :) = 0; Mgm(uE, uE) = 1;
-% Mgm(:, wE) = 0; Mgm(wE, :) = 0; Mgm(wE, wE) = 1; 
-% 
-% uH = 3*pontos.H.nod-2;
-% wH = 3*pontos.H.nod-1;
-% Kgm(:, uH) = 0; Kgm(uH, :) = 0; Kgm(uH, uH) = 1;
-% Kgm(:, wH) = 0; Kgm(wH, :) = 0; Kgm(wH, wH) = 1;
-% Mgm(:, uH) = 0; Mgm(uH, :) = 0; Mgm(uH, uH) = 1;
-% Mgm(:, wH) = 0; Mgm(wH, :) = 0; Mgm(wH, wH) = 1;
-% 
-% uG = 3*pontos.G.nod-2;
-% wG = 3*pontos.G.nod-1;
-% phiG = 3*pontos.G.nod;
-% Kgm(:, uG) = 0; Kgm(uG, :) = 0; Kgm(uG, uG) = 1;
-% Kgm(:, wG) = 0; Kgm(wG, :) = 0; Kgm(wG, wG) = 1;
-% Kgm(:, phiG) = 0; Kgm(phiG, :) = 0; Kgm(phiG, phiG) = 1;
-% Mgm(:, uG) = 0; Mgm(uG, :) = 0; Mgm(uG, uG) = 1;
-% Mgm(:, wG) = 0; Mgm(wG, :) = 0; Mgm(wG, wG) = 1;
-% Mgm(:, phiG) = 0; Mgm(phiG, :) = 0; Mgm(phiG, phiG) = 1; 
-% 
-% A = Mgm\Kgm;
-% [vec, val] = eig(A);
-% val = sqrt(diag(val))/(2*pi);
-
+end
