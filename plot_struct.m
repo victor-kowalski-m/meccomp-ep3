@@ -17,8 +17,8 @@ for e = 1:Nel
     else
         cor = 'g';
     end
-    plot([x1 x2], [y1 y2], str); hold on;
-%     plot([x1 x2], [y1 y2], strcat('.-',cor)); hold on;
+    plot([x1 x2], [y1 y2], str);
     
 end
 axis equal;
+axis([-5 70 -10 25]);

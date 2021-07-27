@@ -279,22 +279,7 @@ for i = 1:length(t)
     deslocB(i) = U_plot(3*pontos.B.nod-1);
     deslocC(i) = U_plot(3*pontos.C.nod-1);
     deslocF(i) = U_plot(3*pontos.F.nod-2);
-    
-%     if mod(i, 20)
-%     
-%     coorExag = coor + scale*[U_plot(1:3:end) U_plot(2:3:end)];
-% %     figure(1);
-%     plot_struct(coorExag, con, '-r');
-%     axis([-10 80 -10 25])
-%     pause(0.001);
-%     grid;
-%     clf;
-% %     figure(2);
-% %     plot(F3(2:3:end));
-% %     axis([-50 300 -3000 3000])
-% %     pause(0.001);
-%     end
-    
+        
     U1 = U2;
     V1 = V2;
     A1 = A2;

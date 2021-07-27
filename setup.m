@@ -1,9 +1,7 @@
-clear
-clc
-close all
-
-for dx=[1 2 3]
-% dx = 1; % discretização escolhida
+function [coor, con, pontos, data, Kgm, Mgm, Fg, id_free, Ngdl]...
+    = setup(dx)
+%SETUP Summary of this function goes here
+%   Detailed explanation goes here
 
 %%% Pontos do desenho
 pontos.A.coor = [0  0 ]; pontos.A.nod = 1; % A
@@ -20,7 +18,11 @@ coor = pontos.A.coor; con = []; nos = 1; % inicialização de matrizes de
     % coordenadas e conectividade
 
 %%% Insere viga horizontal nas matrizes de coord. e conec.
-ps = ['A', 'B', 'D', 'E', 'I'];
+if dx == 1
+    ps = ['A', 'B', 'C', 'D', 'E', 'H','I'];
+else
+    ps = ['A', 'B', 'D', 'E', 'I'];
+end
 for i=1:length(ps)-1
     [pIn, NpIn] = calcula_pontos_internos( ...
         pontos.(ps(i)).coor, pontos.(ps(i+1)).coor, dx);
@@ -76,8 +78,7 @@ data.Q = zeros(Nel, 1);
 for e = 1:Nel
     
     x1 = coor(con(e, 1), 1);
-    x2 = coor(con(e, 2), 1);
-    
+    x2 = coor(con(e, 2), 1);  
     y1 = coor(con(e, 1), 2);
     y2 = coor(con(e, 2), 2);
     
@@ -140,8 +141,11 @@ Te = @(theta)...
      0            0            0          0            0           1
     ];
 
+Fe = @(q, L) q/12*[0 6*L L^2 0 6*L -L^2]';
+
 Kg = zeros(Ngdl);
 Mg = zeros(Ngdl);
+Fg = zeros(Ngdl, 1);
 
 for e = 1:Nel
     
@@ -172,42 +176,24 @@ for e = 1:Nel
         Mg(3*nod2-2:3*nod2, 3*nod1-2:3*nod1) + me(4:6, 1:3); 
     Mg(3*nod2-2:3*nod2, 3*nod2-2:3*nod2) = ...
         Mg(3*nod2-2:3*nod2, 3*nod2-2:3*nod2) + me(4:6, 4:6);
+    
+    if (nod2 <= pontos.C.nod) ||( ...
+        (nod1 >= pontos.E.nod) && (nod2 <= pontos.H.nod))
         
+        fe  = Fe(-80*9.8/9, data.L(e));
+        Fg(3*nod1-2:3*nod1) = Fg(3*nod1-2:3*nod1) + fe(1:3);
+        Fg(3*nod2-2:3*nod2) = Fg(3*nod2-2:3*nod2) + fe(4:6);
+        
+    end
+    
 end
 
 list = 1:Ngdl;
 id_fix = [3*pontos.I.nod-2 3*pontos.I.nod-1 3*pontos.G.nod-2:3*pontos.G.nod];
 id_free = list(ismember(list, id_fix) == 0);
-Ngdla = length(id_free);
+% Ngdla = length(id_free);
 
 Kgm = Kg(id_free, id_free);
 Mgm = Mg(id_free, id_free);
-
-aux_eig = Mgm\Kgm;
-[autovec, autoval] = eigs(aux_eig, 6, 'SM');
-autoval = sqrt(diag(autoval))/(2*pi);
-
-disp("dx: "+dx)
-disp(autoval);
-
-for mod=1:6
-
-freq = autoval(mod);
-
-U = zeros(Ngdl, 1);
-U(id_free) = autovec(:, mod);
-scale = 10;
-
-figure(dx)
-coorExag = coor + scale*[U(1:3:end) U(2:3:end)];
-subplot(2, 3, mod)
-hold on
-plot_struct(coorExag, con, '-r');
-axis([-5 70 -10 25])
-plot_struct(coor, con, '-b');
-axis([-5 70 -10 25])
-title(mod+"º modo")
-end
-
 
 end

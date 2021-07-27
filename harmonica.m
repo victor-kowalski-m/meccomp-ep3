@@ -75,8 +75,7 @@ data.Q = zeros(Nel, 1);
 for e = 1:Nel
     
     x1 = coor(con(e, 1), 1);
-    x2 = coor(con(e, 2), 1);
-    
+    x2 = coor(con(e, 2), 1);  
     y1 = coor(con(e, 1), 2);
     y2 = coor(con(e, 2), 2);
     
@@ -199,10 +198,15 @@ scale = 500;
 
 FF = 15;
 df = 0.01;
-f = 0:df:FF;
-% OMF = 100;
-% dom = 0.01;
-% om = 0:dom:OMF;
+f = [];
+
+ini = 0;
+for i=1:length(autoval)
+    av = autoval(i);
+    zoom = 100;
+    f = [f ini:df:(av-df) (av-df+df/zoom):df/zoom:(av+df-df/zoom)];
+    ini = (av+df);
+end
 
 deslocA = zeros(length(f), 1);
 deslocB = zeros(length(f), 1);
@@ -211,13 +215,6 @@ deslocF = zeros(length(f), 1);
 
 for i = 1:length(f)
         
-%     F2 = Fg;
-%     
-%     % Define Vi
-% 
-%     F2 = F2 + V;
-%     F2 = F2(id_free);
-    
     U2 = (Kgm - (2*pi*f(i))^2*Mgm)\Fgm;
     
     U_plot(id_free) = abs(U2);
@@ -229,7 +226,7 @@ for i = 1:length(f)
        
 end
 
-figure();
+figure(dx);
 hold on
 plot(f, deslocA)
 plot(f, deslocB)
@@ -240,5 +237,5 @@ legend(["A" "B" "C" "F"])
 title('Resposta em frequência')
 ylabel("||U|| (m)")
 xlabel("f (Hz)")
-xticks(0:1:15)
+% xticks(0:1:15)
 grid();
