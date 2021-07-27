@@ -12,13 +12,14 @@ pontos.D.coor = [18 0 ]; pontos.D.nod = 0; % D
 pontos.E.coor = [36 0 ]; pontos.E.nod = 0; % E
 pontos.F.coor = [36 18]; pontos.F.nod = 0; % F
 pontos.G.coor = [36 -5]; pontos.G.nod = 0; % G
-pontos.H.coor = [65  0]; pontos.H.nod = 0; % H
+pontos.H.coor = [45  0]; pontos.H.nod = 0; % H
+pontos.I.coor = [65  0]; pontos.I.nod = 0; % I
 
 coor = pontos.A.coor; con = []; nos = 1; % inicialização de matrizes de
     % coordenadas e conectividade
 
 %%% Insere viga horizontal nas matrizes de coord. e conec.
-ps = ['A', 'B', 'C', 'D', 'E', 'H'];
+ps = ['A', 'B', 'C','D', 'E', 'I'];
 for i=1:length(ps)-1
     [pIn, NpIn] = calcula_pontos_internos( ...
         pontos.(ps(i)).coor, pontos.(ps(i+1)).coor, dx);
@@ -44,7 +45,7 @@ end
 vigaVer = (vigaHor(end)+1):size(con, 1);
 
 %%% Insere treliças nas matrizes de coord. e conec.
-for p = ['B', 'D', 'H']
+for p = ['B', 'D', 'I']
     con(end+1, :) = [pontos.(p).nod pontos.F.nod];
 end
 trelicas = (vigaVer(end)+1):size(con, 1);
@@ -174,7 +175,7 @@ for e = 1:Nel
 end
 
 list = 1:Ngdl;
-id_fix = [3*pontos.H.nod-2 3*pontos.H.nod-1 3*pontos.G.nod-2:3*pontos.G.nod];
+id_fix = [3*pontos.I.nod-2 3*pontos.I.nod-1 3*pontos.G.nod-2:3*pontos.G.nod];
 id_free = list(ismember(list, id_fix) == 0);
 
 Kgm = Kg(id_free, id_free);
@@ -184,12 +185,12 @@ A = Mgm\Kgm;
 [vec, val] = eigs(A, 6, 'SM');
 val = sqrt(diag(val))/(2*pi);
 
-mod = 6;
+mod = 2;
 
 freq = val(mod);
 T = 1/freq;
 dt = T/15;
-TF = 5*T;
+TF = T;
 t = 0:dt:TF;
 
 U = zeros(Ngdl, 1);
