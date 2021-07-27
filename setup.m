@@ -1,9 +1,7 @@
 function [coor, con, pontos, data, Kgm, Mgm, Fg, id_free, Ngdl]...
     = setup(dx)
-%SETUP Summary of this function goes here
-%   Detailed explanation goes here
 
-%%% Pontos do desenho
+% Pontos do desenho
 pontos.A.coor = [0  0 ]; pontos.A.nod = 1; % A
 pontos.B.coor = [5  0 ]; pontos.B.nod = 0; % B
 pontos.C.coor = [9  0 ]; pontos.C.nod = 0; % C
@@ -14,10 +12,12 @@ pontos.G.coor = [36 -5]; pontos.G.nod = 0; % G
 pontos.H.coor = [45  0]; pontos.H.nod = 0; % H
 pontos.I.coor = [65  0]; pontos.I.nod = 0; % I
 
-coor = pontos.A.coor; con = []; nos = 1; % inicialização de matrizes de
-    % coordenadas e conectividade
+% Inicialização de matrizes de coordenadas e conectividade
+coor = pontos.A.coor;
+con = [];
+nos = 1;
 
-%%% Insere viga horizontal nas matrizes de coord. e conec.
+% Insere viga horizontal nas matrizes de coord. e conec.
 if dx == 1
     ps = ['A', 'B', 'C', 'D', 'E', 'H','I'];
 else
@@ -34,7 +34,7 @@ for i=1:length(ps)-1
 end
 vigaHor = 1:size(con, 1);
 
-%%% Insere viga vertical nas matrizes de coord. e conec.
+% Insere viga vertical nas matrizes de coord. e conec.
 for p=['G', 'F']
     [pIn, NpIn] = calcula_pontos_internos( ...
         pontos.E.coor, pontos.(p).coor, dx);
@@ -53,28 +53,30 @@ for p = ['B', 'D', 'I']
 end
 trelicas = (vigaVer(end)+1):size(con, 1);
 
-%%% Quantidades de nós, elementos e G.L.
+% Quantidades de nós, elementos e G.L.
 Nod = size(coor, 1);
 Nel = size(con, 1);
 Ngdl = 3*Nod;
 
-%%% Props. dos elementos
+% Modulo de Young e densidade dos elementos
 data.E = 210e9*ones(Nel, 1);
 data.rho = 7600*ones(Nel, 1);
 
+% Areas dos elementos 
 data.A = zeros(Nel, 1);
 data.A(vigaHor) = 0.9*0.9;
 data.A(vigaVer) = 1.8*0.9;
 data.A(trelicas) = pi*0.05^2/4;
 
+% Momentos de inércia dos elementos
 data.I = zeros(Nel, 1);
 data.I(vigaHor) = 0.9*0.9^3/12;
 data.I(vigaVer) = 1.8^3*0.9/12;
 data.I(trelicas) = pi*0.05^4/32;
 
+% Calcula comprimento e inclinação de cada elemento e indica se é viga
 data.L = zeros(Nel, 1);
 data.Q = zeros(Nel, 1);
-
 for e = 1:Nel
     
     x1 = coor(con(e, 1), 1);
@@ -94,59 +96,63 @@ for e = 1:Nel
 end
 
 
-%%% Funções para cálculo das matrizes de rigidez, massa e transformação
+% Função para cálculo da matriz de rigidez
 Ke = @(E, A, I, L, viga)...
     [ ...
-     1  0  0 -1  0  0;
-     0  0  0  0  0  0;
-     0  0  0  0  0  0;
-    -1  0  0  1  0  0;
-     0  0  0  0  0  0;
-     0  0  0  0  0  0;
+     1  0  0 -1  0  0  ;
+     0  0  0  0  0  0  ;
+     0  0  0  0  0  0  ;
+    -1  0  0  1  0  0  ;
+     0  0  0  0  0  0  ;
+     0  0  0  0  0  0  ;
     ] * E*A/L + ...
     [ ...
-     0      0      0      0     0     0     ;
-     0      12     6*L    0    -12    6*L   ;
-     0      6*L    4*L^2  0    -6*L   2*L^2 ;
-     0      0      0      0     0     0     ;
-     0     -12    -6*L    0     12   -6*L   ;
-     0      6*L    2*L^2  0    -6*L   4*L^2 ;
+     0      0      0      0     0     0      ;
+     0      12     6*L    0    -12    6*L    ;
+     0      6*L    4*L^2  0    -6*L   2*L^2  ;
+     0      0      0      0     0     0      ;
+     0     -12    -6*L    0     12   -6*L    ;
+     0      6*L    2*L^2  0    -6*L   4*L^2  ;
     ] * E*I/(L^3) * viga;
 
+% Função para cálculo da matriz de massa
 Me = @(rho, A, L, viga)...
     [ ...
-     2  0  0  1  0  0;
-     0  0  0  0  0  0;
-     0  0  0  0  0  0;
-     1  0  0  2  0  0;
-     0  0  0  0  0  0;
-     0  0  0  0  0  0;
+     2  0  0  1  0  0  ;
+     0  0  0  0  0  0  ;
+     0  0  0  0  0  0  ; 
+     1  0  0  2  0  0  ;
+     0  0  0  0  0  0  ;
+     0  0  0  0  0  0  ;
     ] * rho*A*L/6 + ...
     [ ...
-     0       0       0       0      0      0     ;
+     0       0       0       0      0      0      ;
      0       156     22*L    0      54    -13*L   ;
-     0       22*L    4*L^2   0      13*L  -3*L^2 ;
-     0       0       0       0      0      0     ;
+     0       22*L    4*L^2   0      13*L  -3*L^2  ;
+     0       0       0       0      0      0      ;
      0       54      13*L    0      156   -22*L   ;
-     0      -13*L   -3*L^2   0     -22*L   4*L^2 ;
+     0      -13*L   -3*L^2   0     -22*L   4*L^2  ;
     ] * rho*A*L/420 * viga;
 
+% Função para cálculo da matriz de transformação
 Te = @(theta)...
     [
-     cosd(theta)  sind(theta)  0          0           0            0;
-    -sind(theta)  cosd(theta)  0          0           0            0;
-     0            0            1          0           0            0;
-     0            0            0          cosd(theta) sind(theta)  0;
-     0            0            0         -sind(theta) cosd(theta)  0;
-     0            0            0          0            0           1
+     cosd(theta)  sind(theta)  0          0           0            0  ;
+    -sind(theta)  cosd(theta)  0          0           0            0  ;
+     0            0            1          0           0            0  ;
+     0            0            0          cosd(theta) sind(theta)  0  ;
+     0            0            0         -sind(theta) cosd(theta)  0  ;
+     0            0            0          0            0           1  ;
     ];
 
+% Função para cálculo do vetor de carregamento distribuído
 Fe = @(q, L) q/12*[0 6*L L^2 0 6*L -L^2]';
 
+% Itera cada elemento e monta matrizes globais de massa e rigidez e vetor
+%   de carregamento
 Kg = zeros(Ngdl);
 Mg = zeros(Ngdl);
 Fg = zeros(Ngdl, 1);
-
 for e = 1:Nel
     
     ke = Ke(data.E(e), data.A(e), data.I(e), data.L(e), data.viga(e));
@@ -188,11 +194,10 @@ for e = 1:Nel
     
 end
 
+% Cria matrizes de rigidez e massa apenas com os G.L. livres
 list = 1:Ngdl;
 id_fix = [3*pontos.I.nod-2 3*pontos.I.nod-1 3*pontos.G.nod-2:3*pontos.G.nod];
 id_free = list(ismember(list, id_fix) == 0);
-% Ngdla = length(id_free);
-
 Kgm = Kg(id_free, id_free);
 Mgm = Mg(id_free, id_free);
 
