@@ -74,7 +74,8 @@ data.I(vigaHor) = 0.9*0.9^3/12;
 data.I(vigaVer) = 1.8^3*0.9/12;
 data.I(trelicas) = pi*0.05^4/32;
 
-% Calcula comprimento e inclinação de cada elemento e indica se é viga
+% Calcula comprimento e inclinação de cada elemento e indica se
+%   há componente de viga, ou seja, se é um pórtico
 data.L = zeros(Nel, 1);
 data.Q = zeros(Nel, 1);
 for e = 1:Nel

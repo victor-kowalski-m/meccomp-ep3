@@ -21,7 +21,7 @@ for mod=1:6
     hold on
     plot_struct(coorExag, con, '-r');
     plot_struct(coor, con, '-b');
-    title(mod+"º modo")
+    title(mod+"º modo ("+autoval(mod)+" Hz)")
     hold off
 
 end

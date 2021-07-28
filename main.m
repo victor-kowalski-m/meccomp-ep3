@@ -9,6 +9,8 @@ for dx=[3 2 1]
     
     % Análise modal para cada dx
     [autovec, autoval] = modal(coor, con, Kgm, Mgm, id_free, Ngdl, dx);
+    fprintf("As 6 primeiras frequências naturais para dx = %d \n", dx);
+    disp(autoval);
     
 end % estrutura usada nos próximos será com dx=1
 
