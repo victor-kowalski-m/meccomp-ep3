@@ -17,5 +17,5 @@ end % estrutura usada nos próximos será com dx=1
 % Análise transiente
 transiente(coor, con, pontos, data, Kgm, Mgm, Fg, id_free, Ngdl);
 
-% % Análise harmônica
+% Análise harmônica
 harmonica(coor, con, pontos, data, Kgm, Mgm, Fg, id_free, Ngdl);
