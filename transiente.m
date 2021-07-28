@@ -110,6 +110,7 @@ for j=1:length(vas)
             'Interpreter','latex')
         ylabel("U (m)")
         xlabel("t (s)")
+        grid()
     end
 
 end
@@ -127,6 +128,7 @@ title('\bf{Pontos ABCF} ({\boldmath$v_a='+string(va)+'$})', ...
     'Interpreter','latex')
 ylabel("U (m)")
 xlabel("t (s)")
+grid()
 end
 
 end

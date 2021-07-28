@@ -43,8 +43,7 @@ for i = 1:length(f)
     deslocB(i) = U_plot(3*pontos.B.nod-1);
     deslocC(i) = U_plot(3*pontos.C.nod-1);
     deslocF(i) = U_plot(3*pontos.F.nod-2);
-    
-       
+         
 end
 
 % Plota norma do deslocamento versus frequência nos pontos determinados
