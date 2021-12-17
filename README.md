@@ -8,4 +8,4 @@ Sample of the results (first six modes of vibration of the structure):
 
 <img src="plots/modaldx1.png" alt="drawing" width="800"/>
 
-Several other plots are shown in the folder *plots*.
+Several other plots are shown in the folder [plots](plots).
