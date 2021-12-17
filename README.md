@@ -6,6 +6,6 @@ Vibration analysis of a bridge excited by the walking of pedestrians.
 
 Sample of the results (first 6 vibration modes of the structure):
 
-<img src="imagens/modaldx1.png" alt="drawing" width="500"/>
+<img src="imagens/modaldx1.png" alt="drawing" width="700"/>
 
 Several other plots are shown in the folder *plots*.
